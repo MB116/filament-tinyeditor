@@ -481,19 +481,24 @@ export default function tinyeditor({
 
 										// Dispatch form processing finished event
 										dispatchFormEvent(this.editor(), 'form-processing-finished');
-										this.isUploadingFile = false;
-										success(tempUrl);
 
-										const editor = this.editor();
+												// Tag the blob image with data-id BEFORE calling success()
+												// TinyMCE replaces only src/data-mce-src when processing upload result,
+												// so data-id will be preserved on the element
+												const editor = this.editor();
+												const blobUri = blobInfo.blobUri();
+												if (editor && blobUri) {
+													const imgs = editor.getBody().querySelectorAll('img');
+													for (const img of imgs) {
+														if (img.getAttribute('src') === blobUri && !img.hasAttribute('data-id')) {
+															img.setAttribute('data-id', fileKey);
+															break;
+														}
+													}
+												}
 
-										editor.once('SetContent', ({ content, format, paster, selection }) => {
-											const imgs = editor.getBody().querySelectorAll('img:not([data-id])');
-											if (imgs.length > 0) {
-												// Tag the last inserted <img>
-												const img = imgs[imgs.length - 1];
-												img.setAttribute('data-id', fileKey);
-											}
-										});
+												this.isUploadingFile = false;
+												success(tempUrl);
 									})
 									.catch((error) => {
 										console.error('Upload error:', error);

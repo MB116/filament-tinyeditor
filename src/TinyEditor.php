@@ -108,7 +108,7 @@ class TinyEditor extends Field implements Contracts\CanBeLengthConstrained
                 $fileKey = $image->getAttribute('data-id'); // Use data-id for fileKey
                 $filename = basename(parse_url($src, PHP_URL_PATH));
 
-                if (!$src || !$fileKey || !$filename) {
+                if (!$src || !$filename) {
                     continue;
                 }
 
@@ -116,6 +116,24 @@ class TinyEditor extends Field implements Contracts\CanBeLengthConstrained
 
                 // Check if the src is a temporary URL
                 if ($tempDisk->exists($tempPath)) {
+                    // If data-id is missing, try to find the matching attachment
+                    // by scanning all componentFileAttachments for this statePath
+                    if (!$fileKey) {
+                        $allAttachments = data_get($component->getLivewire(), "componentFileAttachments.{$component->getStatePath()}");
+                        if (is_array($allAttachments)) {
+                            foreach ($allAttachments as $key => $att) {
+                                if ($att instanceof TemporaryUploadedFile && $att->getFilename() === $filename) {
+                                    $fileKey = $key;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!$fileKey) {
+                        continue;
+                    }
+
                     $attachment = $this->getUploadedFileAttachment($fileKey);
 
                     if ($attachment) {
