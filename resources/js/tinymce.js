@@ -256,9 +256,9 @@ export default function tinyeditor({
 			return tinymce.get(editors[this.statePath]);
 		},
 		isInsideRepeater() {
-			return this.$el.closest('[wire\\:sortable]') !== null || 
-				   this.$el.closest('.fi-fo-repeater') !== null ||
-				   this.$el.closest('.fi-fo-builder') !== null;
+			return this.$el.closest('[wire\\:sortable]') !== null ||
+				this.$el.closest('.fi-fo-repeater') !== null ||
+				this.$el.closest('.fi-fo-builder') !== null;
 		},
 		tryInitializeEditor(content) {
 			// Retry initialization until the target node is available
@@ -273,7 +273,7 @@ export default function tinyeditor({
 		getFileAttachmentUrl: (fileKey) =>
 			this.$wire.callSchemaComponentMethod(
 				key,
-				'getUploadedFileAttachmentTemporaryUrl',
+				'saveFileAttachmentByKeyAndGetUrl',
 				{
 					attachment: fileKey,
 				},
@@ -482,23 +482,23 @@ export default function tinyeditor({
 										// Dispatch form processing finished event
 										dispatchFormEvent(this.editor(), 'form-processing-finished');
 
-												// Tag the blob image with data-id BEFORE calling success()
-												// TinyMCE replaces only src/data-mce-src when processing upload result,
-												// so data-id will be preserved on the element
-												const editor = this.editor();
-												const blobUri = blobInfo.blobUri();
-												if (editor && blobUri) {
-													const imgs = editor.getBody().querySelectorAll('img');
-													for (const img of imgs) {
-														if (img.getAttribute('src') === blobUri && !img.hasAttribute('data-id')) {
-															img.setAttribute('data-id', fileKey);
-															break;
-														}
-													}
+										// Tag the blob image with data-id BEFORE calling success()
+										// TinyMCE replaces only src/data-mce-src when processing upload result,
+										// so data-id will be preserved on the element
+										const editor = this.editor();
+										const blobUri = blobInfo.blobUri();
+										if (editor && blobUri) {
+											const imgs = editor.getBody().querySelectorAll('img');
+											for (const img of imgs) {
+												if (img.getAttribute('src') === blobUri && !img.hasAttribute('data-id')) {
+													img.setAttribute('data-id', fileKey);
+													break;
 												}
+											}
+										}
 
-												this.isUploadingFile = false;
-												success(tempUrl);
+										this.isUploadingFile = false;
+										success(tempUrl);
 									})
 									.catch((error) => {
 										console.error('Upload error:', error);

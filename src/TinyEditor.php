@@ -5,10 +5,12 @@ namespace AmidEsfahani\FilamentTinyEditor;
 use Closure;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Concerns;
+use Filament\Support\Components\Attributes\ExposedLivewireMethod;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Filament\Forms\Components\Contracts;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
+use Livewire\Attributes\Renderless;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use AmidEsfahani\FilamentTinyEditor\FileAttachmentProviders\Contracts\FileAttachmentProvider;
 
@@ -87,10 +89,10 @@ class TinyEditor extends Field implements Contracts\CanBeLengthConstrained
 
         $this->beforeStateDehydrated(function (TinyEditor $component, ?string $rawState, ?Model $record) {
             $fileAttachmentProvider = $this->getFileAttachmentProvider();
-            
+
             $tempDiskName = config('livewire.temporary_file_upload.disk', config('filament-tinyeditor.temporary_file_upload_disk', 'local'));
             $tempDisk = Storage::disk($tempDiskName);
-            
+
             $fileAttachmentIds = [];
             $updated = false;
 
@@ -842,5 +844,24 @@ class TinyEditor extends Field implements Contracts\CanBeLengthConstrained
     public function getFileAttachmentsVisibility(): ?string
     {
         return $this->fileAttachmentsVisibility ?? $this->getFileAttachmentProvider()?->getDefaultFileAttachmentVisibility();
+    }
+
+    /**
+     * Сохраняет загруженный файл в постоянное хранилище и возвращает публичный URL.
+     * Вызывается из JS сразу после загрузки файла через Livewire.
+     */
+    #[ExposedLivewireMethod]
+    #[Renderless]
+    public function saveFileAttachmentByKeyAndGetUrl(TemporaryUploadedFile|string|null $attachment = null): ?string
+    {
+        $file = $this->getUploadedFileAttachment($attachment);
+
+        if (!$file) {
+            return null;
+        }
+
+        $savedPath = $this->saveUploadedFileAttachment($file);
+
+        return $this->getFileAttachmentUrl($savedPath);
     }
 }
